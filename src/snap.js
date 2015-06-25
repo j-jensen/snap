@@ -2,39 +2,45 @@
     var MODEL = window.Symbol ? window.Symbol() : '$$model',
         EL = window.Symbol ? window.Symbol() : '$$el';
 
-    function Snap(config) {
+    function View(config) {
         config || (config = {});
-        _.extend(this, _.pick(config, ['initialize', 'render']));
-
-        this[MODEL] = _.result(config, 'model');
-        this.initialize.apply(this, arguments);
+        _.extend(this, _.pick(config, ['initState', 'render']));
+        var state = _.result(this, 'initState');
+        Object.defineProperty(this, 'state', {
+            get: function () { return state; },
+            set: function (newValue) {
+                if (state != newValue) {
+                    state = newValue;
+                    // Mutate
+                }
+            }
+        });
     }
 
-    Snap.prototype = {
-
-        initialize: _.identity,
-
-        render: _.identity,
+    View.prototype = {
+        render: function () { },
 
         destroy: function () {
-        },
-
-        setModel: function (model) {
-            this[MODEL] = model;
-            this[EL] = this.render();
-        },
-
-        getModel: function () {
-            return this[MODEL];
         }
     };
 
     return {
-        create: function (config) {
-            return new Snap(config);
+        createView: function (config) {
+            return new View(config);
+        },
+
+        fromTemplate: function (templateString) {
+            var el = document.createElement('div'),
+                template = _.template(templateString);
+
+            return function () {
+                el.innerHtml = template(this.state);
+                return el;
+            };
         },
 
         render: function (snap, container) {
+            if (!(snap instanceof View)) throw new Error('Only pass objects of type Snap.View to render.');
             var el = snap.render();
             container.appendChild(el);
         }
