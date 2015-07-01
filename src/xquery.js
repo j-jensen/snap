@@ -1,7 +1,7 @@
 /* DOM helper by Jesper Jensen */
 var $ = (function (d) {
-    var htmlre = /^<([^\s\/>]+) ?\/?>$/i,
-        _extend = function(target, src){
+    var reHTML = /^<([^\s\/>]+) ?\/?>$/i,
+        extend = function(target, src){
             !src && (src=target) && (target=this);
             for (var i in src)
                 src.hasOwnProperty(i) && (target[i]=src[i]);
@@ -14,11 +14,12 @@ var $ = (function (d) {
     });
 
     function $(s, attr) {
-        var self = this;
-        if (this instanceof $)
+        if (this instanceof $){
+            if ((this.selector = s) == undefined)
+
             if(typeof s != 'string')
                 this.push(s);
-            else if(htmlre.test(s)){
+            else if(reHTML.test(s)){
                 this.push(d.createElement(RegExp.$1));
                 if(attr)
                     this.attr(attr);
@@ -27,22 +28,12 @@ var $ = (function (d) {
                 Array.prototype.forEach.call(d.querySelectorAll(s), function(el) {
                           this.push(el);
                 }, this);
-        else 
+        }else 
             return new $(s, attr);
     };
     $.prototype=[];
 
-    _extend($.prototype, {
-        extend: _extend,
-
-        on: function (e, h) {
-            this.forEach(function (el) {
-                if (el.addEventListener)
-                    el.addEventListener('click', h);
-                else
-                    el.attachEvent('on' + e, h);
-            }); return this;
-        },
+    extend($.prototype, {
         addClass: function (n) {
             this.removeClass(n);
             this.forEach(function (el) {
@@ -50,46 +41,64 @@ var $ = (function (d) {
             });
             return this;
         },
+        after: function (el) {
+            this.forEach(function (element) {
+                el.length && element.parentNode.insertBefore(el[0], element.nextSibling);
+            });
+            return this;
+        },
+        append: function (el) {
+            this.forEach(function (element) {
+                el.length && element.appendChild(el[0]);
+            });
+            return this;
+        },
+        attr: function (src) {
+            if (typeof src == 'string')
+                return this.length ? this[0][src] : undefined;
+            this.forEach(function (el) {
+                for (var k in src) src.hasOwnProperty(k) && el.setAttribute(k, src[k]);
+            });
+            return this;
+        },
+        extend: extend,
         hasClass: function (n) {
             var re = new RegExp('(^|\\s)' + n + '(\\s|$)'), found = false;
             this.forEach(function (el) { return found || (found = re.test(el.className)); });
             return found;
         },
-        toggleClass: function (n) {
-            this.hasClass(n) ? this.removeClass(n) : this.addClass(n);
+        html: function (h) {
+            this.forEach(function (el) { el.innerHTML = h; });
+            return this;
+        },
+        on: function (e, h) {
+            this.forEach(function (el) {
+                if (el.addEventListener)
+                    el.addEventListener('click', h);
+                else
+                    el.attachEvent('on' + e, h);
+            });
+            return this;
+        },
+        parent: function () {
+            var parent = new $();
+            this.forEach(function (el) { parent.push(el.parentElement); });
+            return parent;
         },
         removeClass: function (n) {
             this.forEach(function (el) {
-                var idx = -1, 
-                a = el.className.split(' ');
-                a.forEach(function (c, i) { if (c == n) idx = i; });
+                var idx = -1, a = el.className.split(' ');
+                a.forEach(function (c, i) {
+                    if (c == n) idx = i;
+                });
                 if (idx < 0) return;
-
-                a.splice(idx);
+                a.splice(idx, 1);
                 el.className = a.join(' ');
             });
             return this;
         },
-        append: function (el) {
-            this.forEach(function (e) {
-                e.appendChild((el instanceof $) ? el[0] : el);
-            });
-            return this;
-        },
-        attr: function (a) {
-            if (typeof a == 'string')
-                return this.length ? this[0][a] : undefined;
-            this.forEach(function (el) { 
-                for (var key in a)
-                    a.hasOwnProperty(key) && el.setAttribute(key, a[key]);
-            });
-            return this;
-        },
-        html: function (html) {
-            this.forEach(function (el) { 
-                el.innerHTML = html; 
-            });
-            return this;
+        toggleClass: function (n) {
+            this.hasClass(n) ? this.removeClass(n) : this.addClass(n);
         }
     });
     return $;
