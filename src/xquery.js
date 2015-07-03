@@ -1,6 +1,7 @@
-/* DOM helper by Jesper Jensen */
-var $ = (function (d) {
-    var reHTML = /^<([^\s\/>]+) ?\/?>$/i,
+
+define('jquery', [], function () {
+    var d = window.document,
+        reHTML = /^<([^\s\/>]+) ?\/?>$/i,
         extend = function(target, src){
             !src && (src=target) && (target=this);
             for (var i in src)
@@ -8,12 +9,7 @@ var $ = (function (d) {
             return this;
         };
 
-    Array.prototype.forEach || (Array.prototype.forEach =function (callback, thisArg) { 
-        for (var i = 0; i < this.length; i++) 
-                callback.call((thisArg||this), this[i], i); 
-    });
-
-    function $(s, attr) {
+    function $(s, props) {
         if (this instanceof $){
             if ((this.selector = s) == undefined)
 
@@ -21,23 +17,23 @@ var $ = (function (d) {
                 this.push(s);
             else if(reHTML.test(s)){
                 this.push(d.createElement(RegExp.$1));
-                if(attr)
-                    this.attr(attr);
+                if(props)
+                    this.prop(props);
             }
             else
                 Array.prototype.forEach.call(d.querySelectorAll(s), function(el) {
                           this.push(el);
                 }, this);
         }else 
-            return new $(s, attr);
+            return new $(s, props);
     };
-    $.prototype=[];
+    $.prototype = [];
 
     extend($.prototype, {
-        addClass: function (n) {
-            this.removeClass(n);
+        addClass: function (name) {
+            this.removeClass(name);
             this.forEach(function (el) {
-                el.className = (el.className ? el.className + ' ' : '') + n;
+                el.className = (el.className ? el.className + ' ' : '') + name;
             });
             return this;
         },
@@ -62,21 +58,23 @@ var $ = (function (d) {
             return this;
         },
         extend: extend,
-        hasClass: function (n) {
-            var re = new RegExp('(^|\\s)' + n + '(\\s|$)'), found = false;
+        hasClass: function (name) {
+            var re = new RegExp('(^|\\s)' + name + '(\\s|$)'), found = false;
             this.forEach(function (el) { return found || (found = re.test(el.className)); });
             return found;
         },
-        html: function (h) {
-            this.forEach(function (el) { el.innerHTML = h; });
+        html: function (html) {
+            if (!arguments.length)
+                return this.length ? this[0].innerHTML : undefined;
+            this.forEach(function (el) { el.innerHTML = html; });
             return this;
         },
-        on: function (e, h) {
+        on: function (event, handler) {
             this.forEach(function (el) {
                 if (el.addEventListener)
-                    el.addEventListener('click', h);
+                    el.addEventListener(event, handler);
                 else
-                    el.attachEvent('on' + e, h);
+                    el.attachEvent('on' + event, handler);
             });
             return this;
         },
@@ -85,21 +83,38 @@ var $ = (function (d) {
             this.forEach(function (el) { parent.push(el.parentElement); });
             return parent;
         },
-        removeClass: function (n) {
+        prop: function(props){
+            if (typeof src == 'string')
+                return this.length ? this[0][props] : undefined;
+            this.forEach(function (el) {
+                for (var key in props) props.hasOwnProperty(key) && (el[key] = props[key]);
+            });
+            return this;
+        },
+        removeClass: function (name) {
             this.forEach(function (el) {
                 var idx = -1, a = el.className.split(' ');
-                a.forEach(function (c, i) {
-                    if (c == n) idx = i;
+                a.forEach(function (className, i) {
+                    if (className == name) 
+                        idx = i;
                 });
-                if (idx < 0) return;
+                if (idx < 0) 
+                    return;
                 a.splice(idx, 1);
                 el.className = a.join(' ');
             });
             return this;
         },
-        toggleClass: function (n) {
-            this.hasClass(n) ? this.removeClass(n) : this.addClass(n);
+        text: function(text){
+            if (!arguments.length)
+                return this.length ? this[0].innerText : undefined;
+            this.forEach(function (el) { 
+                el.textContent ? el.textContent = text: el.innerText = text; });
+            return this;
+        },
+        toggleClass: function (name) {
+            this.hasClass(name) ? this.removeClass(name) : this.addClass(name);
         }
     });
     return $;
-})(document);
+});
