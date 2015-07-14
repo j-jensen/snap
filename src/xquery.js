@@ -1,5 +1,5 @@
 
-define('jquery', [], function () {
+define([], function () {
     var d = window.document,
         reHTML = /^<([^\s\/>]+) ?\/?>$/i,
         extend = function(target, src){
@@ -12,6 +12,7 @@ define('jquery', [], function () {
     function $(s, props) {
         if (this instanceof $){
             if ((this.selector = s) == undefined)
+                return;
 
             if(typeof s != 'string')
                 this.push(s);
