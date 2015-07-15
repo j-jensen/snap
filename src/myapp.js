@@ -1,4 +1,4 @@
-define(['application', 'home-module'], function(Application, home){
+define(['application', 'home-module', 'xquery'], function(Application, home, $){
 
 	function MyApp(){
 		Application.apply(this, arguments);
@@ -10,6 +10,7 @@ define(['application', 'home-module'], function(Application, home){
 	MyApp.prototype.start = function(){
 		Application.prototype.start.apply(this, arguments);
 		this.module('home').start();
+		$(document.body).append($('<div/>',{className:'abb'}).text('hello'));
 	};
 
 	return MyApp;
