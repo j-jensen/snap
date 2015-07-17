@@ -10,6 +10,7 @@ define([], function () {
 
             if(typeof s != 'string')
                 this.push(s);
+
             else if(reHTML.test(s)){
                 this.push(d.createElement(RegExp.$1));
                 if(props)

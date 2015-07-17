@@ -1,4 +1,4 @@
-define(['application', 'home-module', 'xquery'], function(Application, home, $){
+define(['application', 'home-module', 'promise'], function(Application, home, Promise){
 
 	function MyApp(){
 		Application.apply(this, arguments);
@@ -6,11 +6,30 @@ define(['application', 'home-module', 'xquery'], function(Application, home, $){
 		this.module('home', home);
 	}
 	MyApp.prototype = Object.create(Application.prototype);
+	MyApp.prototype.constructor = MyApp;
 
 	MyApp.prototype.start = function(){
 		Application.prototype.start.apply(this, arguments);
 		this.module('home').start();
-		$(document.body).append($('<div/>',{className:'abb'}).text('hello'));
+
+		Promise.all(Promise(function(resolve, reject){
+			window.setTimeout(
+                function() {
+                    // We fulfill the promise !
+                    resolve('Hello promise 1');
+                },  3000);
+			}),
+			Promise(function(resolve, reject){
+				window.setTimeout(
+	                function() {
+	                    // We fulfill the promise !
+	                    resolve('Hello promise 2');
+	                },  1000);
+				}),
+			Promise.resolve('Hello 3')
+		).then(function(){
+			console.log(arguments);
+		}).catch(function(){console.error(arguments)});
 	};
 
 	return MyApp;
