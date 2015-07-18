@@ -14,30 +14,48 @@ define([], function(){
 		};
 		Object.defineProperties(this, props(this, promise));
 
-		executor(function(){
-			var args = Array.prototype.slice.call(arguments);
+		try{
+			executor(function(){
+				promise.fulfillArguments = Array.prototype.slice.call(arguments, 0);
 
-			promise.fulfill.forEach(function(fulfill){
-				fulfill.apply(this, promise.fulfillArguments = args);
-			}, this);
-			promise.state = 'fulfilled';
-		}.bind(this),
-		function(){
-			var args = Array.prototype.slice.call(arguments);
+				promise.fulfill.forEach(function(fulfill){
+					_callOrApply(this, fulfill, promise.fulfillArguments);
+				}, this);
+				promise.state = 'fulfilled';
+			}.bind(this),
+			function(){
+				promise.rejectArguments = Array.prototype.slice.call(arguments, 0);
+
+				promise.reject.forEach(function(reject){
+					_callOrApply(this, reject, promise.rejectArguments);
+				}, this);
+				promise.state = 'rejected';
+			}.bind(this));
+		}
+		catch(err){
+			promise.rejectArguments = [err];
 			promise.reject.forEach(function(reject){
-				reject.apply(this, promise.rejectArguments = args);
+				_callOrApply(this, reject, promise.rejectArguments);
 			}, this);
 			promise.state = 'rejected';
-		}.bind(this));
+		}
 	}
+	var _callOrApply = function(context, func, args){
+		args.length > 1 ?
+			func.apply(context, args) :
+			args.length > 0 ?
+				func.call(context, args[0]) :
+				func.call(context);
+	};
 
 	var _then = function(promise, fulfill, reject){
 		switch(promise.state){
 			case 'fulfilled':
-				fulfill.apply(this, promise.fulfillArguments);
+				_callOrApply(this, fulfill, promise.fulfillArguments);
 				break;
 			case 'rejected':
-				reject.apply(this, promise.rejectArguments);
+				if(reject)
+					_callOrApply(this, reject, promise.rejectArguments);
 				break;
 			case 'pending':
 				promise.fulfill.push(fulfill);
@@ -49,7 +67,7 @@ define([], function(){
 
 	_catch = function(promise, reject){
 		if(promise.state == 'rejected')
-			promise.reject.apply(this, promise.rejectArguments);
+			_callOrApply(this, reject, promise.rejectArguments);
 		else
 			promise.reject.push(reject);
 	},
@@ -74,7 +92,7 @@ define([], function(){
 			promises.forEach(function(promise, idx){
 				promise.then(
 					function(){
-						resolved[idx] = arguments;
+						resolved[idx] = arguments.length > 0 ? arguments[0] : null;
 						if(resolved.filter(function(e){return typeof e != 'undefined'}).length==promises.length)
 							fulfill.apply(all, resolved);
 					},
@@ -104,9 +122,10 @@ define([], function(){
 	};
 
 	Promise.resolve = function(value){
-		return new Promise(function(fulfill){
-			fulfill(value);
+		var resolve = new Promise(function(fulfill){
+			fulfill.call(resolve, value);
 		});
+		return resolve;
 	};
 
 	return Promise;
