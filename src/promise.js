@@ -14,7 +14,6 @@ define([], function(){
 		};
 		Object.defineProperties(this, props(this, promise));
 
-		try{
 			executor(function(){
 				promise.fulfillArguments = Array.prototype.slice.call(arguments, 0);
 
@@ -31,14 +30,6 @@ define([], function(){
 				}, this);
 				promise.state = 'rejected';
 			}.bind(this));
-		}
-		catch(err){
-			promise.rejectArguments = [err];
-			promise.reject.forEach(function(reject){
-				_callOrApply(this, reject, promise.rejectArguments);
-			}, this);
-			promise.state = 'rejected';
-		}
 	}
 	var _callOrApply = function(context, func, args){
 		args.length > 1 ?

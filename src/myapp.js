@@ -20,8 +20,7 @@ define(['application', 'home-module', 'promise'], function(Application, home, Pr
                 },  3000);
 			}),
 			Promise(function(resolve, reject){
-	                    throw new Error('Argh...');
-				window.setTimeout(
+	          	window.setTimeout(
 	                function() {
 	                    // We fulfill the promise !
 	                    resolve('Hello promise 2');
@@ -29,6 +28,7 @@ define(['application', 'home-module', 'promise'], function(Application, home, Pr
 				}),
 			Promise.resolve('Hello 3')
 		).then(function(hello1, hello2, hello3){
+			          throw new Error('Argh...');
 			console.log(arguments);
 		}).catch(function(){
 			console.warn(arguments)});
