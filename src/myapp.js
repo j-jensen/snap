@@ -1,4 +1,4 @@
-define(['application', 'home-module', 'promise'], function(Application, home, Promise){
+define(['application', 'home-module', 'ajax'], function(Application, home, ajax){
 
 	function MyApp(){
 		Application.apply(this, arguments);
@@ -12,23 +12,8 @@ define(['application', 'home-module', 'promise'], function(Application, home, Pr
 		Application.prototype.start.apply(this, arguments);
 		this.module('home').start();
 
-		Promise.all(Promise(function(resolve, reject){
-			window.setTimeout(
-                function() {
-                    // We fulfill the promise !
-                    resolve('Hello promise 1');
-                },  3000);
-			}),
-			Promise(function(resolve, reject){
-	          	window.setTimeout(
-	                function() {
-	                    // We fulfill the promise !
-	                    resolve('Hello promise 2');
-	                },  1000);
-				}),
-			Promise.resolve('Hello 3')
-		).then(function(hello1, hello2, hello3){
-			          throw new Error('Argh...');
+		ajax.post('http://www.onh3.dk/api/wai', {latitude: 60.398239499999995, longitude: 5.3268754, altitude: null})
+		.then(function(resp){
 			console.log(arguments);
 		}).catch(function(){
 			console.warn(arguments)});

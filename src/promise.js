@@ -32,6 +32,8 @@ define([], function(){
 			}.bind(this));
 	}
 	var _callOrApply = function(context, func, args){
+		if(typeof func != 'function')return;
+
 		args.length > 1 ?
 			func.apply(context, args) :
 			args.length > 0 ?
@@ -50,7 +52,8 @@ define([], function(){
 				break;
 			case 'pending':
 				promise.fulfill.push(fulfill);
-				promise.reject.push(reject);
+				if(typeof reject == 'function')
+					promise.reject.push(reject);
 				break;
 		}
 		return this;

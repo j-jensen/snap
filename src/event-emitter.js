@@ -1,16 +1,7 @@
 define([], function(){
 	'use strict';
 
-	var allOff = function(hub, type){
-		if(type) delete hub[type];
-		else{
-			for(var k in hub)
-				if(hub.hasOwnProperty(k))
-					delete hub[k];
-		}
-	},
-
-	on = function(hub, type, handler){
+	var on = function(hub, type, handler){
 		if(!type || !handler) return;
 		(hub[type] || (hub[type] = [])).push(handler);
 	},
@@ -50,7 +41,6 @@ define([], function(){
 	props = function(self){
 		var hub = {};
 		return {
-			allOff: { value: allOff.bind(self, hub) }, 
 			on: 	{ value: on.bind(self, hub)	},
 			once: 	{ value: once.bind(self, hub) },
 			off: 	{ value: off.bind(self, hub) },
