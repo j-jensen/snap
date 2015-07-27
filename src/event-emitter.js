@@ -32,10 +32,18 @@ define([], function(){
 	},
 
 	_emit = function(hub, type, args){
-		if(hub.hasOwnProperty(type))
+		if(type.type){
+			args = type;
+			type = type.type;
+		}
+		if(hub.hasOwnProperty(type)){
 			hub[type].forEach(function(handler){
-				setTimeout(Function.prototype.apply.bind(handler, this, args), 0);
+				if(Array.isArray(args))
+					setTimeout(Function.prototype.apply.bind(handler, this, args), 0);
+				else
+					setTimeout(Function.prototype.call.bind(handler, this, args), 0);
 			}.bind(this));
+		}
 	},
 
 	props = function(self){

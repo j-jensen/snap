@@ -26,7 +26,7 @@ define(['promise'], function(Promise){
 		      		reject(ex);
 		        }
 		  	} else {
-		  		reject(this);
+		  		reject(new Error(this.statusText));
 		  	}
 		}
 	};

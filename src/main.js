@@ -1,7 +1,8 @@
 require.config({
 	paths: {
 		views:'../framework/views',
-		d:'../node_modules/event-emitter/node_modules/d/index'
+		underscore:'../node_modules/backbone/node_modules/underscore/underscore',
+		jquery:'xquery'
 	}
 });
 

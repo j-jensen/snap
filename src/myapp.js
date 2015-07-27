@@ -1,4 +1,4 @@
-define(['application', 'model'], function(Application, Model){
+define(['application', 'model','syncronizer'], function(Application, Model, Sync){
 
 	function MyApp(){
 		Application.apply(this, arguments);
@@ -9,14 +9,12 @@ define(['application', 'model'], function(Application, Model){
 	MyApp.prototype.start = function(){
 		var Person = Model({defaults: {name: null, age: 0, state: 1}});
 		
-		model = new Person({name: 'Jesper', age: 45});
-		model.on('all', function(){console.log(arguments)});
+		var model = window.model = new Person({id:123});
+		model.on('all',function(){console.log(arguments)});
 		model.fetch();
-		model.save().then(function(){
-			model.age++;
-			model.save();
 
-		});
+		model.age++;
+
 	};
 
 	return MyApp;
