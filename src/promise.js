@@ -130,5 +130,12 @@ define([], function(){
 		return resolve;
 	};
 
+	Promise.reject = function(error){
+		var reject = new Promise(function(fulfill, reject){
+			reject.call(reject, error);
+		});
+		return reject;
+	};
+
 	return Promise;
 });

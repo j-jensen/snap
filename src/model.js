@@ -25,7 +25,7 @@ define(['event-emitter', 'promise', 'ajax'], function(EventEmitter, Promise, aja
 						set: function(val){
 							if(val != state[key]){
 								state.__changes[key] = val;
-								this.emit({
+								this.emit('change', {
 									type:'change', name:key, value:val, oldValue: state[key]});
 								state[key] = val;
 							}
@@ -55,6 +55,7 @@ define(['event-emitter', 'promise', 'ajax'], function(EventEmitter, Promise, aja
 						return ajax.get([url, this.id].join('/'))
 							.then(function(model){
 								reset(model, state);
+								this.emit('fetched', this);
 							});
 					}
 				},
@@ -67,7 +68,23 @@ define(['event-emitter', 'promise', 'ajax'], function(EventEmitter, Promise, aja
 							: ajax.post(url, state))
 								.then(function(model){ 
 									reset(model, state); 
+									this.emit('saved', this);
 								});
+					}
+				},
+				remove: {
+					writable: false,
+					enumerable: false,
+					value: function(){
+						if(this.id){
+							return ajax.delete([url, this.id].join('/'), state)
+								.then(function(){ 
+									reset({}, state); 
+									this.emit('deleted', this);
+								});
+							}else{
+								return Promise.reject('Can not remove model without id');
+							}
 					}
 				}
 			}

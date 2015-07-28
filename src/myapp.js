@@ -13,7 +13,8 @@ define(['application', 'model','syncronizer'], function(Application, Model, Sync
 		});
 		
 		var model = window.model = new Person({id:123});
-		model.on('all',function(){console.log(arguments)});
+		model.on('all',function(){
+			console.log(arguments)});
 		model.fetch().then(function(){console.log(arguments)},function(){console.log(arguments)});
 
 		model.age++;
