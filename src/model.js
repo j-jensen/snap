@@ -2,17 +2,19 @@ define(['event-emitter', 'promise', 'ajax'], function(EventEmitter, Promise, aja
 	'use strict';
 
 	return function(config){
+		var url = config.url,
+		idAttribute = config.idAttribute || 'id',
 
-		var properties = function(defaults, state){
+		properties = function(defaults, state){
 			var props = {
 				id: {
 					enumerable: true,
-					set: function(value){ state['id'] = value; },
-					get: function(){ return state['id'] },
+					set: function(value){ state[idAttribute] = value; },
+					get: function(){ return state[idAttribute] },
 				},
 				changes: {
-					writable: false,
-					value: state.__changes
+					enumerable: false,
+					get: function(){ return state.__changes; }
 				}
 			};
 			for(var key in defaults){
@@ -35,11 +37,11 @@ define(['event-emitter', 'promise', 'ajax'], function(EventEmitter, Promise, aja
 				})(key);
 			}
 			return props;			
-		}.bind(null, config.defaults),
+		}.bind(null, config.defaults || {}),
 
-		set = function(src, target){
-			for(var key in src){
-				target[key] = src[key];
+		reset = function(values, target){
+			for(var key in values){
+				target[key] = values[key];
 			}
 			target.__changes = {};
 		},
@@ -50,47 +52,25 @@ define(['event-emitter', 'promise', 'ajax'], function(EventEmitter, Promise, aja
 					writable: false,
 					enumerable: false,
 					value: function(){
-						var self = this;
-						return Promise(function(fulfill, reject){
-							ajax.get('api/model/' + self.id)
-								.then(function(m){
-									set(m, state)
-									self.emit('fetched', self);
-								})
-								.catch(reject)
+						return ajax.get([url, this.id].join('/'))
+							.then(function(model){
+								reset(model, state);
 							});
 					}
 				},
-				save:{
+				save: {
 					writable: false,
 					enumerable: false,
 					value: function(){
-						var self = this;
-						return Promise(function(fulfill, reject){
-							if(self.id){
-								ajax.put('api/model/'+ self.id)
-									.then(function(model){
-										set(m, state)
-										self.emit('updated', self);
-									})
-									.catch(reject);
-							}else{
-								ajax.post('api/model/new')
-									.then(function(model){
-										set(m, state)
-										self.emit('updated', self);
-									})
-									.catch(reject);
-							}
-						});
+						return (this.id
+							? ajax.put([url, this.id].join('/'), state)
+							: ajax.post(url, state))
+								.then(function(model){ 
+									reset(model, state); 
+								});
 					}
 				}
 			}
-		};
-
-
-
-		Model.prototype = {
 		};
 
 		function Model(props){
@@ -107,7 +87,7 @@ define(['event-emitter', 'promise', 'ajax'], function(EventEmitter, Promise, aja
 						if(this.hasOwnProperty(key))
 							this[key] = props[key];
 			}else{
-				return new Model(attributes);
+				return new Model(props);
 			}
 		};
 

@@ -1,36 +1,38 @@
 define([], function(){
 	'use strict';
 
+	// Main constructor. Takes an executor of type function
 	function Promise(executor){
 		if(!(this instanceof Promise))
 			return new Promise(executor);
 
-		var promise = {
+		var instance = {
 			state: 'pending',
 			fulfill: [],
 			fulfillArguments: [],
 			reject: [],
 			rejectArguments: [],
 		};
-		Object.defineProperties(this, props(this, promise));
+		Object.defineProperties(this, props(this, instance));
 
 			executor(function(){
-				promise.fulfillArguments = Array.prototype.slice.call(arguments, 0);
+				instance.fulfillArguments = Array.prototype.slice.call(arguments, 0);
 
-				promise.fulfill.forEach(function(fulfill){
-					_callOrApply(this, fulfill, promise.fulfillArguments);
+				instance.fulfill.forEach(function(fulfill){
+					_callOrApply(this, fulfill, instance.fulfillArguments);
 				}, this);
-				promise.state = 'fulfilled';
+				instance.state = 'fulfilled';
 			}.bind(this),
 			function(){
-				promise.rejectArguments = Array.prototype.slice.call(arguments, 0);
+				instance.rejectArguments = Array.prototype.slice.call(arguments, 0);
 
-				promise.reject.forEach(function(reject){
-					_callOrApply(this, reject, promise.rejectArguments);
+				instance.reject.forEach(function(reject){
+					_callOrApply(this, reject, instance.rejectArguments);
 				}, this);
-				promise.state = 'rejected';
+				instance.state = 'rejected';
 			}.bind(this));
 	}
+
 	var _callOrApply = function(context, func, args){
 		if(typeof func != 'function')return;
 
@@ -41,29 +43,29 @@ define([], function(){
 				func.call(context);
 	};
 
-	var _then = function(promise, fulfill, reject){
-		switch(promise.state){
+	var _then = function(instance, fulfill, reject){
+		switch(instance.state){
 			case 'fulfilled':
-				_callOrApply(this, fulfill, promise.fulfillArguments);
+				_callOrApply(this, fulfill, instance.fulfillArguments);
 				break;
 			case 'rejected':
 				if(reject)
-					_callOrApply(this, reject, promise.rejectArguments);
+					_callOrApply(this, reject, instance.rejectArguments);
 				break;
 			case 'pending':
-				promise.fulfill.push(fulfill);
+				instance.fulfill.push(fulfill);
 				if(typeof reject == 'function')
-					promise.reject.push(reject);
+					instance.reject.push(reject);
 				break;
 		}
 		return this;
 	},
 
-	_catch = function(promise, reject){
-		if(promise.state == 'rejected')
-			_callOrApply(this, reject, promise.rejectArguments);
+	_catch = function(instance, reject){
+		if(instance.state == 'rejected')
+			_callOrApply(this, reject, instance.rejectArguments);
 		else
-			promise.reject.push(reject);
+			instance.reject.push(reject);
 	},
 
 	props = function(self, state){
@@ -77,6 +79,8 @@ define([], function(){
 		}
 	};
 
+	// Static methods
+	// all is resolved when all arguments are resolved (AND)
 	Promise.all = function(){
 		var promises = Array.prototype.slice.call(arguments);
 
@@ -84,10 +88,11 @@ define([], function(){
 			var resolved = [];
 
 			promises.forEach(function(promise, idx){
+				promise = typeof promise.then == 'function' ? promise : Promise.resolve(promise);
 				promise.then(
 					function(){
 						resolved[idx] = arguments.length > 0 ? arguments[0] : null;
-						if(resolved.filter(function(e){return typeof e != 'undefined'}).length==promises.length)
+						if(resolved.filter(function(e){return typeof e != 'undefined'}).length==instances.length)
 							fulfill.apply(all, resolved);
 					},
 					function(){
@@ -98,23 +103,26 @@ define([], function(){
 		return all;
 	};
 
+	// race resolves when the first promise resolves (OR)
 	Promise.race = function(){
 		var promises = Array.prototype.slice.call(arguments);
 
 		var race = new Promise(function(fulfill, reject){
-			promises.forEach(function(promise, idx){
+			promises.forEach(function(promise){
+				promise = typeof promise.then == 'function' ? promise : Promise.resolve(promise);
 				promise.then(
 					function(){
-						fulfill.apply(all, arguments);
+						fulfill.apply(race, arguments);
 					},
 					function(){
-						reject.apply(all,arguments);						
+						reject.apply(race, arguments);						
 					});
 			});
 		});
 		return race;
 	};
 
+	// resolve returns a resolved promise
 	Promise.resolve = function(value){
 		var resolve = new Promise(function(fulfill){
 			fulfill.call(resolve, value);
