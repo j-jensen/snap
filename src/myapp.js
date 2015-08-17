@@ -1,4 +1,4 @@
-define(['application', 'model','syncronizer'], function(Application, Model, Sync){
+define(['application', 'model','view','dom'], function(Application, Model, View, $){
 
 	function MyApp(){
 		Application.apply(this, arguments);
@@ -13,12 +13,13 @@ define(['application', 'model','syncronizer'], function(Application, Model, Sync
 		});
 		
 		var model = window.model = new Person({id:123});
-		model.on('all',function(){
-			console.log(arguments)});
-		model.fetch().then(function(){console.log(arguments)},function(){console.log(arguments)});
+		model.on('change', function(){console.debug(arguments)})
+		  
 
+		var view = new View({model:model, el:$('<div />'), bindings:{text:'name'}});
+		view.mount(document.body);
+		model.fetch();
 		model.age++;
-
 	};
 
 	return MyApp;

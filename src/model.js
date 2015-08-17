@@ -41,24 +41,13 @@ define(['event-emitter', 'promise', 'ajax'], function(EventEmitter, Promise, aja
 
 		reset = function(values, target){
 			for(var key in values){
-				target[key] = values[key];
+				target[key] != values[key] && (target[key] = values[key]);
 			}
 			target.__changes = {};
 		},
 
 		instanceMethods = function(state){
 			return {
-				fetch: {
-					writable: false,
-					enumerable: false,
-					value: function(){
-						return ajax.get([url, this.id].join('/'))
-							.then(function(model){
-								reset(model, state);
-								this.emit('fetched', this);
-							});
-					}
-				},
 				save: {
 					writable: false,
 					enumerable: false,
@@ -107,6 +96,13 @@ define(['event-emitter', 'promise', 'ajax'], function(EventEmitter, Promise, aja
 				return new Model(props);
 			}
 		};
+
+		Model.prototype.fetch = function(){
+				return ajax.get([url, this.id].join('/'))
+					.then(function(model){
+						reset(model, this);
+					}.bind(this));
+				};
 
 		return Model;
 	};
