@@ -1,83 +1,73 @@
 define([], function(){
 	'use strict';
 
+	var PENDING = 'pending', FULFILLED = 'fulfilled', REJECTED = 'rejected';
+
+
 	// Main constructor. Takes an executor of type function
 	function Promise(executor){
+		if(typeof executor != 'function')
+			throw new Error('Promise executor is not a function');
 		if(!(this instanceof Promise))
 			return new Promise(executor);
 
-		var instance = {
-			state: 'pending',
-			fulfill: [],
-			fulfillArguments: [],
-			reject: [],
-			rejectArguments: [],
+		var _state = PENDING,
+			_value = null,
+			_onFulfilled,
+			_onRejected;
+
+		Object.defineProperty(this, 'state', {
+			get: function(){ return _state; }
+		});
+
+		executor(function(value){
+				if(_state != PENDING)return;
+
+				_value = value;
+				_state = FULFILLED;
+				if(_onFulfilled)
+					_onFulfilled(_value);
+			},
+			function(error){
+				if(_state != PENDING)return;
+
+				_value = error;
+				_state = REJECTED;
+				if(_onRejected)
+					_onRejected(_value);
+			});
+
+		this.then = function(onFulfilled, onRejected){
+
+			switch(_state){
+				case FULFILLED:
+					if(typeof onFulfilled != 'function')
+						return this;
+
+					return Promise.fulfill(onFulfilled(_value));
+				
+				case REJECTED:
+					if(typeof onRejected != 'function')
+						return this;
+
+					return Promise.reject(onRejected(_value));
+
+				case PENDING:
+					onFulfilled && (_onFulfilled = onFulfilled);
+					onRejected && (_onRejected = onRejected);
+
+					return new Promise(function(fulfill, reject){
+						if(typeof _onFulfilled == 'function'){
+							var outer = _onFulfilled;
+							_onFulfilled = function(value){ fulfill(outer(value)); };
+						}else{
+							_onFulfilled = fulfill;
+						}
+					});
+			}
 		};
-		Object.defineProperties(this, props(this, instance));
-
-			executor(function(){
-				instance.fulfillArguments = Array.prototype.slice.call(arguments, 0);
-
-				instance.fulfill.forEach(function(fulfill){
-					_callOrApply(this, fulfill, instance.fulfillArguments);
-				}, this);
-				instance.state = 'fulfilled';
-			}.bind(this),
-			function(){
-				instance.rejectArguments = Array.prototype.slice.call(arguments, 0);
-
-				instance.reject.forEach(function(reject){
-					_callOrApply(this, reject, instance.rejectArguments);
-				}, this);
-				instance.state = 'rejected';
-			}.bind(this));
 	}
 
-	var _callOrApply = function(context, func, args){
-		if(typeof func != 'function')return;
-
-		args.length > 1 ?
-			func.apply(context, args) :
-			args.length > 0 ?
-				func.call(context, args[0]) :
-				func.call(context);
-	};
-
-	var _then = function(instance, fulfill, reject){
-		switch(instance.state){
-			case 'fulfilled':
-				_callOrApply(this, fulfill, instance.fulfillArguments);
-				break;
-			case 'rejected':
-				if(reject)
-					_callOrApply(this, reject, instance.rejectArguments);
-				break;
-			case 'pending':
-				instance.fulfill.push(fulfill);
-				if(typeof reject == 'function')
-					instance.reject.push(reject);
-				break;
-		}
-		return this;
-	},
-
-	_catch = function(instance, reject){
-		if(instance.state == 'rejected')
-			_callOrApply(this, reject, instance.rejectArguments);
-		else
-			instance.reject.push(reject);
-	},
-
-	props = function(self, state){
-		return {
-			then:{
-				value: _then.bind(self, state)
-			},
-			catch:{
-				value: _catch.bind(self, state)
-			}
-		}
-	};
 
 	// Static methods
 	// all is resolved when all arguments are resolved (AND)
@@ -135,6 +125,21 @@ define([], function(){
 			reject.call(reject, error);
 		});
 		return reject;
+	};
+
+	Promise.deferred = function(){
+		var _fulfill, 
+			_reject,
+			_promise = new Promise(function(fulfill, reject){
+				_fulfill = fulfill;
+				_reject = reject;
+			});
+		
+		return {
+			resolve: _fulfill,
+			reject: _reject,
+			promise: promise
+		}
 	};
 
 	return Promise;
